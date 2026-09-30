@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Interview Performance Analysis</title>
+
+
+    <style>
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            background: #f4f6f8;
+
+            margin: 0;
+
+            padding: 0;
+
+        }
+
+
+        .container {
+
+            width: 80%;
+
+            max-width: 900px;
+
+            margin: 40px auto;
+
+            background: white;
+
+            padding: 30px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 4px 15px rgba(0,0,0,0.1);
+
+        }
+
+
+        h1 {
+
+            text-align: center;
+
+            color: #222;
+
+        }
+
+
+        .question-box {
+
+            background: #eef4ff;
+
+            padding: 20px;
+
+            border-radius: 10px;
+
+            margin-top: 25px;
+
+        }
+
+
+        .question-box h2 {
+
+            margin-top: 0;
+
+        }
+
+
+        .buttons {
+
+            text-align: center;
+
+            margin-top: 25px;
+
+        }
+
+
+        button {
+
+            padding: 12px 25px;
+
+            margin: 8px;
+
+            border: none;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 16px;
+
+        }
+
+
+        #startBtn {
+
+            background: #28a745;
+
+            color: white;
+
+        }
+
+
+        #stopBtn {
+
+            background: #dc3545;
+
+            color: white;
+
+        }
+
+
+        button:disabled {
+
+            opacity: 0.5;
+
+            cursor: not-allowed;
+
+        }
+
+
+        #status {
+
+            text-align: center;
+
+            margin-top: 20px;
+
+            font-weight: bold;
+
+        }
+
+
+        #audioPlayer {
+
+            width: 100%;
+
+            margin-top: 20px;
+
+        }
+
+
+        #transcriptionBox {
+
+            margin-top: 30px;
+
+            padding: 20px;
+
+            background: #fafafa;
+
+            border-radius: 10px;
+
+            border: 1px solid #ddd;
+
+        }
+
+
+        #transcription {
+
+            line-height: 1.6;
+
+            color: #333;
+
+        }
+
+
+        .result {
+
+            margin-top: 15px;
+
+            padding: 15px;
+
+            background: white;
+
+            border-radius: 8px;
+
+            border: 1px solid #ddd;
+
+        }
+
+
+        hr {
+
+            margin: 25px 0;
+
+            border: none;
+
+            border-top: 1px solid #ddd;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <h1>
+        🎤 AI Interview Performance Analysis
+    </h1>
+
+
+    <!-- QUESTION -->
+
+    <div class="question-box">
+
+        <h2>
+            Interview Question
+        </h2>
+
+        <p>
+            Tell me about yourself.
+        </p>
+
+    </div>
+
+
+    <!-- BUTTONS -->
+
+    <div class="buttons">
+
+        <button id="startBtn">
+            🎙️ Start Recording
+        </button>
+
+
+        <button id="stopBtn" disabled>
+            ⏹️ Stop Recording
+        </button>
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <p id="status">
+        Click Start Recording to begin.
+    </p>
+
+
+    <!-- AUDIO PLAYER -->
+
+    <audio
+        id="audioPlayer"
+        controls>
+    </audio>
+
+
+    <!-- RESULTS -->
+
+    <div id="transcriptionBox">
+
+        <h2>
+            📝 Your Answer
+        </h2>
+
+        <p id="transcription">
+            Your transcribed answer will appear here.
+        </p>
+
+
+        <hr>
+
+
+        <h2>
+            📊 Answer Relevance
+        </h2>
+
+        <p id="relevanceScore">
+            Relevance score will appear here.
+        </p>
+
+
+        <hr>
+
+
+        <h2>
+            🗣️ Filler Words
+        </h2>
+
+        <p id="fillerCount">
+            Filler word count will appear here.
+        </p>
+
+
+        <p id="fillerWords">
+            Detected filler words will appear here.
+        </p>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+
+// ========================================
+// VARIABLES
+// ========================================
+
+let stream = null;
+
+let mediaRecorder = null;
+
+let audioChunks = [];
+
+
+// ========================================
+// START RECORDING
+// ========================================
+
+document
+    .getElementById("startBtn")
+    .addEventListener(
+        "click",
+        startRecording
+    );
+
+
+async function startRecording() {
+
+    console.log(
+        "Start button clicked"
+    );
+
+
+    try {
+
+
+        // --------------------------------
+        // MICROPHONE
+        // --------------------------------
+
+        stream =
+            await navigator.mediaDevices
+                .getUserMedia({
+                    audio: true
+                });
+
+
+        console.log(
+            "Microphone permission granted"
+        );
+
+
+        audioChunks = [];
+
+
+        // --------------------------------
+        // CHECK SUPPORTED MIME TYPES
+        // --------------------------------
+
+        let mimeType =
+            "audio/webm;codecs=opus";
+
+
+        if (
+            !MediaRecorder.isTypeSupported(
+                mimeType
+            )
+        ) {
+
+            mimeType = "audio/webm";
+
+        }
+
+
+        console.log(
+            "Using MIME type:",
+            mimeType
+        );
+
+
+        // --------------------------------
+        // CREATE RECORDER
+        // --------------------------------
+
+        mediaRecorder =
+            new MediaRecorder(
+                stream,
+                {
+                    mimeType: mimeType
+                }
+            );
+
+
+        // --------------------------------
+        // COLLECT AUDIO
+        // --------------------------------
+
+        mediaRecorder.ondataavailable =
+            function(event) {
+
+                console.log(
+                    "Audio chunk:",
+                    event.data.size
+                );
+
+
+                if (
+                    event.data &&
+                    event.data.size > 0
+                ) {
+
+                    audioChunks.push(
+                        event.data
+                    );
+
+                }
+
+            };
+
+
+        // --------------------------------
+        // START
+        // --------------------------------
+
+        mediaRecorder.start(
+            1000
+        );
+
+
+        console.log(
+            "Recording started"
+        );
+
+
+        document
+            .getElementById("status")
+            .innerText =
+            "🔴 Recording... Speak your answer.";
+
+
+        document
+            .getElementById("startBtn")
+            .disabled = true;
+
+
+        document
+            .getElementById("stopBtn")
+            .disabled = false;
+
+
+    }
+
+
+    catch(error) {
+
+
+        console.error(error);
+
+
+        document
+            .getElementById("status")
+            .innerText =
+            "❌ Microphone error: "
+            + error.message;
+
+
+    }
+
+}
+
+
+// ========================================
+// STOP RECORDING
+// ========================================
+
+document
+    .getElementById("stopBtn")
+    .addEventListener(
+        "click",
+        stopRecording
+    );
+
+
+function stopRecording() {
+
+
+    console.log(
+        "Stop button clicked"
+    );
+
+
+    if (
+        !mediaRecorder ||
+        mediaRecorder.state === "inactive"
+    ) {
+
+        return;
+
+    }
+
+
+    mediaRecorder.onstop =
+        function() {
+
+
+            console.log(
+                "Recording stopped"
+            );
+
+
+            // --------------------------------
+            // CREATE BLOB
+            // --------------------------------
+
+            const audioBlob =
+                new Blob(
+                    audioChunks,
+                    {
+                        type:
+                            mediaRecorder.mimeType
+                    }
+                );
+
+
+            console.log(
+                "Final audio size:",
+                audioBlob.size,
+                "bytes"
+            );
+
+
+            console.log(
+                "Final audio type:",
+                audioBlob.type
+            );
+
+
+            // --------------------------------
+            // AUDIO PLAYER
+            // --------------------------------
+
+            const audioURL =
+                URL.createObjectURL(
+                    audioBlob
+                );
+
+
+            document
+                .getElementById(
+                    "audioPlayer"
+                )
+                .src = audioURL;
+
+
+            // --------------------------------
+            // UPLOAD
+            // --------------------------------
+
+            uploadAudio(
+                audioBlob
+            );
+
+
+            // --------------------------------
+            // STOP MICROPHONE
+            // --------------------------------
+
+            if (stream) {
+
+                stream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+
+            }
+
+
+            // --------------------------------
+            // BUTTONS
+            // --------------------------------
+
+            document
+                .getElementById(
+                    "startBtn"
+                )
+                .disabled = false;
+
+
+            document
+                .getElementById(
+                    "stopBtn"
+                )
+                .disabled = true;
+
+
+        };
+
+
+    mediaRecorder.stop();
+
+
+    document
+        .getElementById("status")
+        .innerText =
+        "⏳ Preparing audio...";
+
+
+}
+
+
+// ========================================
+// UPLOAD AUDIO
+// ========================================
+
+async function uploadAudio(
+    audioBlob
+) {
+
+
+    console.log(
+        "Uploading audio to Flask..."
+    );
+
+
+    if (
+        audioBlob.size === 0
+    ) {
+
+        document
+            .getElementById(
+                "status"
+            )
+            .innerText =
+            "❌ Audio recording is empty.";
+
+        return;
+
+    }
+
+
+    const formData =
+        new FormData();
+
+
+    formData.append(
+        "audio",
+        audioBlob,
+        "interview.webm"
+    );
+
+
+    document
+        .getElementById(
+            "status"
+        )
+        .innerText =
+        "⏳ Sending audio to Flask...";
+
+
+    try {
+
+
+        const response =
+            await fetch(
+                "/upload",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Flask response:",
+            data
+        );
+
+
+        // --------------------------------
+        // SUCCESS
+        // --------------------------------
+
+        if (
+            response.ok &&
+            data.success
+        ) {
+
+
+            document
+                .getElementById(
+                    "status"
+                )
+                .innerText =
+                "✅ Analysis completed!";
+
+
+            document
+                .getElementById(
+                    "transcription"
+                )
+                .innerText =
+                data.transcription ||
+                "No transcription available.";
+
+
+            document
+                .getElementById(
+                    "relevanceScore"
+                )
+                .innerText =
+                "Relevance Score: "
+                + data.relevance_score
+                + "%";
+
+
+            document
+                .getElementById(
+                    "fillerCount"
+                )
+                .innerText =
+                "Total Filler Words: "
+                + data.filler_count;
+
+
+            if (
+                data.filler_count > 0
+            ) {
+
+
+                document
+                    .getElementById(
+                        "fillerWords"
+                    )
+                    .innerText =
+                    "Detected: "
+                    +
+                    Object.keys(
+                        data.filler_words
+                    ).join(", ");
+
+
+            }
+
+
+            else {
+
+
+                document
+                    .getElementById(
+                        "fillerWords"
+                    )
+                    .innerText =
+                    "Detected: No filler words.";
+
+            }
+
+
+        }
+
+
+        // --------------------------------
+        // SERVER ERROR
+        // --------------------------------
+
+        else {
+
+
+            document
+                .getElementById(
+                    "status"
+                )
+                .innerText =
+                "❌ Analysis failed.";
+
+
+            document
+                .getElementById(
+                    "transcription"
+                )
+                .innerText =
+                data.message ||
+                "Unable to transcribe audio.";
+
+
+            document
+                .getElementById(
+                    "relevanceScore"
+                )
+                .innerText =
+                "Relevance score unavailable.";
+
+
+            document
+                .getElementById(
+                    "fillerCount"
+                )
+                .innerText =
+                "Filler word analysis unavailable.";
+
+
+            document
+                .getElementById(
+                    "fillerWords"
+                )
+                .innerText =
+                "Unable to analyze filler words.";
+
+
+        }
+
+
+    }
+
+
+    catch(error) {
+
+
+        console.error(
+            "Upload error:",
+            error
+        );
+
+
+        document
+            .getElementById(
+                "status"
+            )
+            .innerText =
+            "❌ Upload failed: "
+            + error.message;
+
+
+    }
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
